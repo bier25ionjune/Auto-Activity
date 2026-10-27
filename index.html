@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Task Auto-Logger</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, Roboto, sans-serif; }
+    .field:focus { outline: none; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #0f172a22; border-color: #0f172a; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen antialiased">
+  <div class="max-w-5xl mx-auto px-4 py-10 space-y-6">
+
+    <!-- Header -->
+    <header class="space-y-1">
+      <h1 class="text-2xl font-semibold tracking-tight">Smart Task Auto-Logger</h1>
+      <p class="text-sm text-slate-500">Generate a randomized daily task schedule and log it to your database.</p>
+    </header>
+
+    <!-- User Info -->
+    <section class="bg-white border border-slate-200 rounded-xl shadow-sm">
+      <div class="px-6 py-4 border-b border-slate-100">
+        <h2 class="text-base font-semibold">User Information</h2>
+        <p class="text-sm text-slate-500">Who is this schedule for?</p>
+      </div>
+      <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label for="userName" class="block text-sm font-medium mb-1.5">User Name <span class="text-red-500">*</span></label>
+          <input id="userName" type="text" required placeholder="Jane Doe"
+            class="field w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400" />
+        </div>
+        <div>
+          <label for="userEmail" class="block text-sm font-medium mb-1.5">User Email <span class="text-red-500">*</span></label>
+          <input id="userEmail" type="email" required placeholder="jane@company.com"
+            class="field w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Tasks -->
+    <section class="bg-white border border-slate-200 rounded-xl shadow-sm">
+      <div class="px-6 py-4 border-b border-slate-100">
+        <h2 class="text-base font-semibold">Tasks</h2>
+        <p class="text-sm text-slate-500">One task per line.</p>
+      </div>
+      <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label for="routineTasks" class="block text-sm font-medium mb-1.5">Daily Routine Tasks</label>
+          <textarea id="routineTasks" rows="7" placeholder="Check emails&#10;Team stand-up&#10;Update progress report"
+            class="field w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400"></textarea>
+          <p class="text-xs text-slate-500 mt-1.5">Assigned to <b>every</b> valid day.</p>
+        </div>
+        <div>
+          <label for="randomTasks" class="block text-sm font-medium mb-1.5">Random Tasks</label>
+          <textarea id="randomTasks" rows="7" placeholder="Code review&#10;Write documentation&#10;Client follow-up&#10;Refactor module"
+            class="field w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400"></textarea>
+          <p class="text-xs text-slate-500 mt-1.5">Pool to randomly pick from to fill remaining slots.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Config -->
+    <section class="bg-white border border-slate-200 rounded-xl shadow-sm">
+      <div class="px-6 py-4 border-b border-slate-100">
+        <h2 class="text-base font-semibold">Configuration</h2>
+        <p class="text-sm text-slate-500">Date range and daily limits.</p>
+      </div>
+      <div class="p-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <div>
+          <label for="startDate" class="block text-sm font-medium mb-1.5">Start Date</label>
+          <input id="startDate" type="date" class="field w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label for="endDate" class="block text-sm font-medium mb-1.5">End Date</label>
+          <input id="endDate" type="date" class="field w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label for="maxTasks" class="block text-sm font-medium mb-1.5">Max tasks per day</label>
+          <input id="maxTasks" type="number" min="1" max="9" value="4" class="field w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" />
+        </div>
+        <label class="flex items-center gap-2 h-[38px] cursor-pointer select-none">
+          <input id="skipWeekends" type="checkbox" checked class="h-4 w-4 rounded border-slate-300 accent-slate-900" />
+          <span class="text-sm font-medium">Skip Weekends</span>
+        </label>
+      </div>
+      <div class="px-6 py-4 border-t border-slate-100 flex flex-wrap items-center gap-3">
+        <button id="generateBtn" type="button"
+          class="inline-flex items-center justify-center rounded-lg bg-slate-900 text-white text-sm font-medium px-4 py-2 shadow-sm hover:bg-slate-800 transition">
+          Generate Schedule
+        </button>
+        <p id="formMsg" class="text-sm"></p>
+      </div>
+    </section>
+
+    <!-- Preview -->
+    <section class="bg-white border border-slate-200 rounded-xl shadow-sm">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-semibold">Schedule Preview</h2>
+          <p id="summary" class="text-sm text-slate-500">No schedule generated yet.</p>
+        </div>
+      </div>
+      <div class="overflow-x-auto max-h-[28rem] overflow-y-auto">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide sticky top-0">
+            <tr>
+              <th class="px-6 py-3 font-medium">Date</th>
+              <th class="px-6 py-3 font-medium">Time Slot</th>
+              <th class="px-6 py-3 font-medium">Task Name</th>
+              <th class="px-6 py-3 font-medium">Type</th>
+            </tr>
+          </thead>
+          <tbody id="previewBody" class="divide-y divide-slate-100">
+            <tr><td colspan="4" class="px-6 py-10 text-center text-slate-400">Nothing to show. Fill in the form and click “Generate Schedule”.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="px-6 py-4 border-t border-slate-100 flex flex-wrap items-center gap-3">
+        <button id="submitBtn" type="button" disabled
+          class="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 text-white text-sm font-medium px-4 py-2 shadow-sm hover:bg-emerald-500 transition disabled:opacity-50 disabled:cursor-not-allowed">
+          <svg id="spinner" class="hidden animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"></circle>
+            <path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="4" stroke-linecap="round" class="opacity-75"></path>
+          </svg>
+          <span id="submitLabel">Submit to Database</span>
+        </button>
+        <p id="submitMsg" class="text-sm"></p>
+      </div>
+    </section>
+
+    <footer class="text-center text-xs text-slate-400 pb-6">Smart Task Auto-Logger</footer>
+  </div>
+
+<script>
+  // ====== CONFIG ======
+  const GAS_URL = 'YOUR_GAS_WEB_APP_URL'; // <-- replace with your deployed GAS Web App URL
+  const TIME_SLOTS = ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00"];
+
+  // ====== STATE ======
+  let schedule = [];
+
+  // ====== HELPERS ======
+  const $ = (id) => document.getElementById(id);
+
+  function escapeHTML(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function parseLines(text) {
+    return text.split(/\r?\n/).map(t => t.trim()).filter(Boolean);
+  }
+
+  // Fisher-Yates
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // Parse 'YYYY-MM-DD' as LOCAL date (avoids UTC off-by-one)
+  function parseLocalDate(str) {
+    const [y, m, d] = str.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  function formatDate(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function setMsg(el, text, type) {
+    el.textContent = text || '';
+    el.className = 'text-sm ' + (type === 'error' ? 'text-red-600' : type === 'success' ? 'text-emerald-600' : type === 'warn' ? 'text-amber-600' : 'text-slate-500');
+  }
+
+  // ====== DISTRIBUTION LOGIC ======
+  function generateSchedule({ routine, pool, start, end, skipWeekends, maxPerDay }) {
+    const result = [];
+    const cap = Math.min(Math.max(1, maxPerDay), TIME_SLOTS.length);
+    const uniquePool = [...new Set(pool)];
+
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dow = d.getDay();
+      if (skipWeekends && (dow === 0 || dow === 6)) continue;
+
+      const dateStr = formatDate(d);
+      const slots = shuffle(TIME_SLOTS);
+      const dayItems = [];
+
+      // 1) Routine tasks -> random slots (truncated if more than available slots)
+      const routineToday = routine.slice(0, slots.length);
+      routineToday.forEach(name => {
+        dayItems.push({ date: dateStr, timeSlot: slots.shift(), name, category: 'Routine' });
+      });
+
+      // 2) Fill remaining up to max with unique random tasks
+      const remaining = Math.max(0, Math.min(cap - dayItems.length, slots.length, uniquePool.length));
+      shuffle(uniquePool).slice(0, remaining).forEach(name => {
+        dayItems.push({ date: dateStr, timeSlot: slots.shift(), name, category: 'Random' });
+      });
+
+      dayItems.sort((a, b) => a.timeSlot.localeCompare(b.timeSlot));
+      result.push(...dayItems);
+    }
+    return result;
+  }
+
+  // ====== RENDER ======
+  function renderPreview() {
+    const body = $('previewBody');
+    if (!schedule.length) {
+      body.innerHTML = '<tr><td colspan="4" class="px-6 py-10 text-center text-slate-400">No tasks generated.</td></tr>';
+      $('summary').textContent = 'No schedule generated yet.';
+      return;
+    }
+    const days = new Set(schedule.map(t => t.date)).size;
+    $('summary').textContent = `${schedule.length} tasks across ${days} day(s).`;
+
+    body.innerHTML = schedule.map(t => {
+      const badge = t.category === 'Routine'
+        ? 'bg-blue-50 text-blue-700 border-blue-200'
+        : 'bg-amber-50 text-amber-700 border-amber-200';
+      return `<tr class="hover:bg-slate-50/70">
+        <td class="px-6 py-3 whitespace-nowrap font-medium text-slate-700">${t.date}</td>
+        <td class="px-6 py-3 whitespace-nowrap text-slate-600">${t.timeSlot}</td>
+        <td class="px-6 py-3">${escapeHTML(t.name)}</td>
+        <td class="px-6 py-3"><span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${badge}">${t.category}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ====== HANDLERS ======
+  function onGenerate() {
+    const formMsg = $('formMsg');
+    setMsg($('submitMsg'), '');
+    const name = $('userName').value.trim();
+    const email = $('userEmail').value.trim();
+    const startVal = $('startDate').value;
+    const endVal = $('endDate').value;
+    const maxPerDay = parseInt($('maxTasks').value, 10);
+    const routine = parseLines($('routineTasks').value);
+    const pool = parseLines($('randomTasks').value);
+
+    if (!name) return setMsg(formMsg, 'User Name is required.', 'error');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setMsg(formMsg, 'A valid User Email is required.', 'error');
+    if (!startVal || !endVal) return setMsg(formMsg, 'Please select a start and end date.', 'error');
+    const start = parseLocalDate(startVal), end = parseLocalDate(endVal);
+    if (end < start) return setMsg(formMsg, 'End date must be on or after start date.', 'error');
+    if (!Number.isFinite(maxPerDay) || maxPerDay < 1) return setMsg(formMsg, 'Max tasks per day must be at least 1.', 'error');
+    if (!routine.length && !pool.length) return setMsg(formMsg, 'Enter at least one routine or random task.', 'error');
+
+    schedule = generateSchedule({
+      routine, pool, start, end,
+      skipWeekends: $('skipWeekends').checked,
+      maxPerDay
+    });
+
+    renderPreview();
+    $('submitBtn').disabled = schedule.length === 0;
+
+    const warnings = [];
+    if (maxPerDay > TIME_SLOTS.length) warnings.push(`Max capped at ${TIME_SLOTS.length} (available slots).`);
+    if (routine.length > Math.min(maxPerDay, TIME_SLOTS.length)) warnings.push('Routine tasks exceed the daily max; all routine tasks (up to 9) are still scheduled.');
+    if (!schedule.length) setMsg(formMsg, 'No valid days in the selected range.', 'warn');
+    else if (warnings.length) setMsg(formMsg, 'Generated. ' + warnings.join(' '), 'warn');
+    else setMsg(formMsg, 'Schedule generated.', 'success');
+  }
+
+  async function submitToGAS() {
+    const btn = $('submitBtn'), msg = $('submitMsg');
+    if (!schedule.length) return setMsg(msg, 'Generate a schedule first.', 'error');
+    if (GAS_URL === 'YOUR_GAS_WEB_APP_URL') return setMsg(msg, 'Set GAS_URL in the script before submitting.', 'error');
+
+    const payload = {
+      user_name: $('userName').value.trim(),
+      user_email: $('userEmail').value.trim(),
+      tasks: schedule
+    };
+
+    btn.disabled = true;
+    $('spinner').classList.remove('hidden');
+    $('submitLabel').textContent = 'Submitting...';
+    setMsg(msg, '');
+
+    try {
+      const response = await fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8', // Crucial for GAS (avoids CORS preflight)
+        }
+      });
+      if (!response.ok) throw new Error(`Server responded with ${response.status}`);
+
+      const text = await response.text();
+      let data = null;
+      try { data = JSON.parse(text); } catch (_) {}
+      if (data && (data.status === 'error' || data.success === false)) {
+        throw new Error(data.message || data.error || 'Server reported an error.');
+      }
+      setMsg(msg, (data && data.message) || 'Submitted successfully.', 'success');
+    } catch (err) {
+      console.error(err);
+      setMsg(msg, 'Submission failed: ' + err.message, 'error');
+    } finally {
+      btn.disabled = schedule.length === 0;
+      $('spinner').classList.add('hidden');
+      $('submitLabel').textContent = 'Submit to Database';
+    }
+  }
+
+  // ====== INIT ======
+  (function init() {
+    const today = new Date();
+    const inSeven = new Date(today); inSeven.setDate(today.getDate() + 6);
+    $('startDate').value = formatDate(today);
+    $('endDate').value = formatDate(inSeven);
+    $('generateBtn').addEventListener('click', onGenerate);
+    $('submitBtn').addEventListener('click', submitToGAS);
+  })();
+</script>
+</body>
+</html>
